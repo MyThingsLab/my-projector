@@ -2,8 +2,18 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from mythings.engine import EngineRequest, EngineResult
 from mythings.projects import ProjectField, ProjectItem
+
+
+@pytest.fixture(autouse=True)
+def _attended_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Default the suite to the attended path. CI sets GITHUB_ACTIONS=true, which
+    # collapses the public tracking-issue-edit ASK to DENY (fail-closed) and
+    # suppresses the checklist edit — a real behavior tests must opt into, not
+    # inherit from the runner's env. (Private board field writes are unaffected.)
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
 
 
 class FakeGh:

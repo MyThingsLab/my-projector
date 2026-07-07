@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from mythings.engine import EngineResult
 from mythings.ledger import Ledger, LedgerEntry
 
@@ -167,6 +168,38 @@ def test_apply_checklist_checks_named_refs(tmp_path: Path) -> None:
     new_body = edit[edit.index("--body") + 1]
     assert "- [x] ship my-guard#5" in new_body
     assert "- [ ] free text line" in new_body  # free text untouched
+
+
+def test_unattended_ci_suppresses_public_checklist_edit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # In CI (unattended) the public tracking-issue edit fail-closes: the checklist
+    # is not checked and no issue edit is made, while the private board sync still
+    # runs (card field writes are not public-content-gated).
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    body = "## Checklist\n- [ ] ship my-guard#5\n"
+    gh = FakeGh(
+        repos=["my-guard"],
+        open_prs={"my-guard": []},
+        open_issues={"my-guard": []},
+        merged={"my-guard": [{"number": 5, "title": "ship", "mergedAt": "2026-07-07T10:00:00Z"}]},
+        issue_body=body,
+    )
+    projects = FakeProjects(
+        items=[card("ITEM_1", "my-guard", status="In Progress")],
+        fields=[status_field(), *text_fields()],
+    )
+    result = Projector(
+        org="MyThingsLab",
+        project_number=1,
+        ledger=Ledger(tmp_path / "ledger.jsonl"),
+        projects=projects,
+        runner=gh,
+    ).sync(apply_checklist=True, tracking=Tracking(repo="MyThingsLab/mythings-core", issue=1))
+
+    assert result.checklist_items_checked == 0  # fail-closed on public content
+    assert not any(c[:2] == ["issue", "edit"] for c in gh.calls)
+    assert result.cards_updated == 1  # private board sync still happens
 
 
 def test_dry_run_makes_no_edits(tmp_path: Path) -> None:
