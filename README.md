@@ -1,5 +1,7 @@
 # my-projector
 
+[![CI](https://github.com/MyThingsLab/my-projector/actions/workflows/ci.yml/badge.svg)](https://github.com/MyThingsLab/my-projector/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/MyThingsLab/my-projector/branch/main/graph/badge.svg)](https://codecov.io/gh/MyThingsLab/my-projector) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A [MyThingsLab](../mythings-core) `My[X]` tool. It keeps the fleet's GitHub
 Project board — and any linked org-wide tracking issue — synced to the **live**
 state of every repo, so the dashboard never silently drifts from reality.
