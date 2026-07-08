@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/MyThingsLab/my-projector/actions/workflows/ci.yml/badge.svg)](https://github.com/MyThingsLab/my-projector/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/MyThingsLab/my-projector/branch/main/graph/badge.svg)](https://codecov.io/gh/MyThingsLab/my-projector) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-A [MyThingsLab](../mythings-core) `My[X]` tool. It keeps the fleet's GitHub
+A [MyThingsLab](../my-things-core) `My[X]` tool. It keeps the fleet's GitHub
 Project board — and any linked org-wide tracking issue — synced to the **live**
 state of every repo, so the dashboard never silently drifts from reality.
 
@@ -41,14 +41,14 @@ field and a tracking issue's checklist.
 ```bash
 myprojector sync --project-number 1 [--repos owner/a,owner/b] [--dry-run] [--json]
 myprojector sync --project-number 1 --apply-checklist \
-  --tracking-repo MyThingsLab/mythings-core --tracking-issue 1
+  --tracking-repo MyThingsLab/my-things-core --tracking-issue 1
 ```
 
 ## Install (development)
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -e ../mythings-core -e ".[dev]"
+pip install -e ../my-things-core -e ".[dev]"
 pytest
 ```
 
