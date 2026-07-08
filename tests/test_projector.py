@@ -161,7 +161,7 @@ def test_apply_checklist_checks_named_refs(tmp_path: Path) -> None:
 
     result = Projector(
         org="MyThingsLab", project_number=1, ledger=ledger, projects=projects, runner=gh
-    ).sync(apply_checklist=True, tracking=Tracking(repo="MyThingsLab/mythings-core", issue=1))
+    ).sync(apply_checklist=True, tracking=Tracking(repo="MyThingsLab/my-things-core", issue=1))
 
     assert result.checklist_items_checked == 1
     edit = [c for c in gh.calls if c[:2] == ["issue", "edit"]][0]
@@ -195,7 +195,7 @@ def test_unattended_ci_suppresses_public_checklist_edit(
         ledger=Ledger(tmp_path / "ledger.jsonl"),
         projects=projects,
         runner=gh,
-    ).sync(apply_checklist=True, tracking=Tracking(repo="MyThingsLab/mythings-core", issue=1))
+    ).sync(apply_checklist=True, tracking=Tracking(repo="MyThingsLab/my-things-core", issue=1))
 
     assert result.checklist_items_checked == 0  # fail-closed on public content
     assert not any(c[:2] == ["issue", "edit"] for c in gh.calls)
@@ -240,7 +240,7 @@ def test_default_policy_asks_before_public_edit(tmp_path: Path) -> None:
 
     result = Projector(
         org="MyThingsLab", project_number=1, ledger=ledger, projects=projects, runner=gh
-    ).sync(tracking=Tracking(repo="MyThingsLab/mythings-core", issue=1))  # apply_checklist=False
+    ).sync(tracking=Tracking(repo="MyThingsLab/my-things-core", issue=1))  # apply_checklist=False
 
     assert result.checklist_items_checked == 0
     assert not [c for c in gh.calls if c[:2] == ["issue", "edit"]]
