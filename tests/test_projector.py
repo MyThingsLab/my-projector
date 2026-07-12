@@ -3,13 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from mythings.engine import EngineResult
 from mythings.ledger import Ledger, LedgerEntry
 
 from conftest import (
     FakeGh,
     FakeProjects,
-    SpyEngine,
+    ScriptedEngine,
     card,
     status_field,
     text_fields,
@@ -31,7 +30,7 @@ def test_happy_path_moves_to_shipped_and_updates_summary(tmp_path: Path) -> None
         fields=[status_field(), *text_fields()],
     )
     ledger = Ledger(tmp_path / "ledger.jsonl")
-    engine = SpyEngine(EngineResult(text='{"last_step": "merged #5", "next_step": "all shipped"}'))
+    engine = ScriptedEngine('{"last_step": "merged #5", "next_step": "all shipped"}')
 
     result = Projector(
         org="MyThingsLab",
@@ -68,7 +67,7 @@ def test_zero_events_skips_engine_and_summary(tmp_path: Path) -> None:
         fields=[status_field(), *text_fields()],
     )
     ledger = Ledger(tmp_path / "ledger.jsonl")
-    engine = SpyEngine()
+    engine = ScriptedEngine()
 
     result = Projector(
         org="MyThingsLab",
