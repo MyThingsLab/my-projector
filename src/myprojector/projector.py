@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shlex
 from dataclasses import dataclass, field
 
@@ -143,9 +144,13 @@ class Projector:
     def _match_repo(self, item: ProjectItem, repos: list[str]) -> str | None:
         if item.repo and item.repo in repos:
             return item.repo
+        # DraftIssue cards have no linked repo, so fall back to the title. The
+        # repo name must appear as a standalone token (word-boundary match),
+        # not merely as a substring of a longer word in free-text titles —
+        # see #10 for a card that was silently attributed to the wrong repo.
         low = item.title.lower()
         for repo in repos:
-            if repo.lower() in low:
+            if re.search(rf"\b{re.escape(repo.lower())}\b", low):
                 return repo
         return None
 
