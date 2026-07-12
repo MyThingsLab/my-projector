@@ -201,6 +201,39 @@ def test_unattended_ci_suppresses_public_checklist_edit(
     assert result.cards_updated == 1  # private board sync still happens
 
 
+def test_unattended_ci_with_ask_channel_lets_a_human_approve_the_checklist_edit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The proof case for fleet-dispatch#40: with MYTHINGS_ASK_CMD wired to a human
+    # who says yes (exit 0), the tracking-issue-edit ASK must resolve to ALLOW even
+    # though the run is unattended — the ask channel, not just `.under()`, has to
+    # decide. `true` stands in for `mytelegrambot ask`.
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("MYTHINGS_ASK_CMD", "true")
+    body = "## Checklist\n- [ ] ship my-guard#5\n"
+    gh = FakeGh(
+        repos=["my-guard"],
+        open_prs={"my-guard": []},
+        open_issues={"my-guard": []},
+        merged={"my-guard": [{"number": 5, "title": "ship", "mergedAt": "2026-07-07T10:00:00Z"}]},
+        issue_body=body,
+    )
+    projects = FakeProjects(
+        items=[card("ITEM_1", "my-guard", status="In Progress")],
+        fields=[status_field(), *text_fields()],
+    )
+    result = Projector(
+        org="MyThingsLab",
+        project_number=1,
+        ledger=Ledger(tmp_path / "ledger.jsonl"),
+        projects=projects,
+        runner=gh,
+    ).sync(apply_checklist=True, tracking=Tracking(repo="MyThingsLab/my-things-core", issue=1))
+
+    assert result.checklist_items_checked == 1  # human said yes: checklist edit happened
+    assert any(c[:2] == ["issue", "edit"] for c in gh.calls)
+
+
 def test_dry_run_makes_no_edits(tmp_path: Path) -> None:
     gh = FakeGh(
         repos=["my-guard"],
