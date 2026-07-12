@@ -4,11 +4,13 @@ import json
 import shlex
 from dataclasses import dataclass, field
 
+from myguard.guard import Guard
+from myguard.rules import Rule
 from mythings.engine import Engine, EngineRequest
 from mythings.github import Runner, _gh
 from mythings.isolation import in_github_actions
 from mythings.ledger import Ledger
-from mythings.policy import ALLOW, Action, Decision, Policy, PolicyResult
+from mythings.policy import Action, Decision, Policy
 from mythings.projects import ProjectField, ProjectItem, Projects
 
 from myprojector.board import checklist_updates, find_drift, normalize_ref, status_change
@@ -25,15 +27,34 @@ _ENGINE_SYSTEM = (
 )
 
 
-class DefaultPolicy:
+def default_policy() -> Policy:
     # The two-tier default: editing a private board is trivially reversible and
     # allowed; editing/closing public content is ASK — never touched unprompted.
-    def evaluate(self, action: Action) -> PolicyResult:
-        if action.kind == "project-field-edit":
-            return ALLOW
-        if action.kind in ("tracking-issue-edit", "issue-close"):
-            return PolicyResult(Decision.ASK, reason="edits public content", rule="public-content")
-        return PolicyResult(Decision.ASK, reason="unclassified action", rule="default-deny-ish")
+    # Wrapped in Guard so the ASK actually escalates through MYTHINGS_ASK_CMD
+    # instead of silently collapsing to DENY the moment `.under(unattended=)` runs.
+    return Guard(
+        rules=[
+            Rule(
+                "private-board-edit",
+                Decision.ALLOW,
+                "editing a private board is trivially reversible",
+                kind="project-field-edit",
+            ),
+            Rule(
+                "public-issue-edit",
+                Decision.ASK,
+                "edits public content",
+                kind="tracking-issue-edit",
+            ),
+            Rule(
+                "public-issue-close",
+                Decision.ASK,
+                "edits public content",
+                kind="issue-close",
+            ),
+        ],
+        default=Decision.ASK,
+    )
 
 
 @dataclass
@@ -71,7 +92,7 @@ class Projector:
         self.projects = projects or Projects(runner=runner)
         self.runner = runner
         self.engine = engine
-        self.policy: Policy = policy or DefaultPolicy()
+        self.policy: Policy = policy or default_policy()
 
     def sync(
         self,
