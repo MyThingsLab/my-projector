@@ -3,17 +3,21 @@ from __future__ import annotations
 import json
 
 import pytest
-from mythings.engine import EngineRequest, EngineResult
 from mythings.projects import ProjectField, ProjectItem
+
+# Shared fixture re-export (aliased import + getfixturevalue wrapper per core
+# docs/CONVENTIONS.md); ScriptedEngine replaces the local SpyEngine.
+from mythings.testing import ScriptedEngine  # noqa: F401
+from mythings.testing import attended_env as _shared_attended_env  # noqa: F401
 
 
 @pytest.fixture(autouse=True)
-def _attended_env(monkeypatch: pytest.MonkeyPatch) -> None:
+def _attended_env(request: pytest.FixtureRequest) -> None:
     # Default the suite to the attended path. CI sets GITHUB_ACTIONS=true, which
     # collapses the public tracking-issue-edit ASK to DENY (fail-closed) and
     # suppresses the checklist edit — a real behavior tests must opt into, not
     # inherit from the runner's env. (Private board field writes are unaffected.)
-    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    request.getfixturevalue("_shared_attended_env")
 
 
 class FakeGh:
@@ -84,16 +88,6 @@ class FakeProjects:
 
     def set_text_field(self, project_id, item_id, field_id, text) -> None:
         self.text.append((item_id, field_id, text))
-
-
-class SpyEngine:
-    def __init__(self, result: EngineResult | None = None) -> None:
-        self.calls: list[EngineRequest] = []
-        self.result = result or EngineResult(text="", data={})
-
-    def run(self, request: EngineRequest) -> EngineResult:
-        self.calls.append(request)
-        return self.result
 
 
 def status_field() -> ProjectField:
